@@ -1,5 +1,4 @@
 #include "asm.h"
-#include "regs.h"
 
 .equ    KERNEL, 0
 .equ    USER,   156
@@ -24,10 +23,11 @@ LEAF(asm_start)
 END(asm_start)
 
 .macro SAVE_CONTEXT offset
+.set noat
     lw  k0, current_running
     addi k0, k0, \offset
 
-    sw	$0 , OFFSET_REG0(k0)
+    #sw	$0 , OFFSET_REG0(k0)
     sw	$1 , OFFSET_REG1(k0)
     sw	$2 , OFFSET_REG2(k0)
     sw	$3 , OFFSET_REG3(k0)
@@ -61,24 +61,38 @@ END(asm_start)
     sw	$31, OFFSET_REG31(k0)
 
     mfc0 k1, CP0_STATUS
+    nop
     sw   k1, OFFSET_STATUS(k0)
+
     mfc0 k1, CP0_TAGHI
+    nop
     sw   k1, OFFSET_HI(k0)
+
     mfc0 k1, CP0_TAGLO
+    nop
     sw   k1, OFFSET_LO(k0)
+
     mfc0 k1, CP0_BADVADDR
+    nop
     sw   k1, OFFSET_BADVADDR(k0)
+
     mfc0 k1, CP0_CAUSE
+    nop
     sw   k1, OFFSET_CAUSE(k0)
+
     mfc0 k1, CP0_EPC
+    nop
     sw   k1, OFFSET_EPC(k0)
 .endm
 
 .macro RESTORE_CONTEXT offset
+.set noat
     lw	k0, current_running
+#    loopp:
+#        j loopp
     addi k0, k0, \offset
 
-    lw	$0 , OFFSET_REG0(k0)
+#    lw	$0 , OFFSET_REG0(k0)
     lw	$1 , OFFSET_REG1(k0)
     lw	$2 , OFFSET_REG2(k0)
     lw	$3 , OFFSET_REG3(k0)
@@ -113,22 +127,30 @@ END(asm_start)
 
     lw   k1, OFFSET_STATUS(k0)
     mtc0 k1, CP0_STATUS
+    nop
     lw   k1, OFFSET_HI(k0)
-    mthi k1
+    mtc0 k1, CP0_TAGHI
+    nop
     lw   k1, OFFSET_LO(k0)
-    mtlo k1
+    mtc0 k1, CP0_TAGLO
+    nop
     lw   k1, OFFSET_BADVADDR(k0)
     mtc0 k1, CP0_BADVADDR
+    nop
     lw   k1, OFFSET_CAUSE(k0)
     mtc0 k1, CP0_CAUSE
+    nop
     lw   k1, OFFSET_EPC(k0)
     mtc0 k1, CP0_EPC
+    nop
 .endm
 
 NESTED(do_scheduler, 0, ra)
     SAVE_CONTEXT(KERNEL)
     jal     scheduler
     RESTORE_CONTEXT(KERNEL)
+#    loop:
+#        j loop
     jr      ra
 END(do_scheduler)
 

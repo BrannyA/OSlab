@@ -11,6 +11,7 @@ static char plane4[] = {"|  o'o             "};
 
 void printk_task1(void)
 {
+    //printk("in task1\n");
     int i;
     int print_location = 1;
 

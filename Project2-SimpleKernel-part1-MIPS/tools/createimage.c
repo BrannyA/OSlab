@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 	FILE *image = fopen("image", "wb");
 
 	FILE *bootblock = fopen("bootblock", "rb");
-	FILE *kernel = fopen("kernel", "rb");
+	FILE *kernel = fopen("main", "rb");
 	Elf32_Phdr *bootblock_phdr = read_exec_file(bootblock);
 	write_bootblock(image, bootblock, bootblock_phdr);
 	Elf32_Phdr *kernel_phdr = read_exec_file(kernel);

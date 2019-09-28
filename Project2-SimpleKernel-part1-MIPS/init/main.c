@@ -32,56 +32,44 @@
 #include "common.h"
 #include "syscall.h"
 
-extern queue_t ready_queue;
-extern queue_t block_queue;
+#define STACK_TOP 0xa0f00000
+#define STACK_SIZE 0x100
+queue_t ready_queue;
+queue_t block_queue;
+queue_t sleep_queue;
+extern pcb_t *current_running;
 
 static void init_pcb()
 {
-	pcb_t *p;
-	ready_queue_init();
 	queue_init(&block_queue);
+	queue_init(&ready_queue);
 	queue_init(&sleep_queue);
 	current_running = &pcb[0];
 
-	for(i = 0; i < num_sched1_tasks; i++)
+	int i, j;
+	for(i = 0; i < 1 + num_sched1_tasks; i++)
 	{
-    	for(j = 0; j <= 31; j++ )
-    	{
-			pcb[i].kernel_context.regs[j] = 0;
-			pcb[i].user_context.regs[j] = 0;
+    	memset(&pcb[i], 0, sizeof(pcb_t));
+		if(i != 0)
+		{
+			pcb[i].user_context.regs[31] = sched1_tasks[i-1] -> entry_point;
+			pcb[i].user_context.pc = sched1_tasks[i-1] -> entry_point;
+			pcb[i].kernel_context.regs[31] = sched1_tasks[i-1] -> entry_point;
+			pcb[i].kernel_context.pc = sched1_tasks[i-1] -> entry_point;
+			pcb[i].type = sched1_tasks[i-1] -> type;
+			queue_push(&ready_queue, &pcb[i]);
 		}
-    	pcb[i].user_context.regs[31] = sched1_tasks[i] -> entry_point;
-		pcb[i].user_context.regs[29] = STACK_TOP - i * STACK_SIZE;
-		pcb[i].kernel_context.cp0_status = 0;
-		pcb[i].kernel_context.hi = 0;
-		pcb[i].kernel_context.lo = 0;
-		pcb[i].kernel_context.cp0_badvaddr = 0;
-		pcb[i].kernel_context.cp0_cause = 0;
-		pcb[i].kernel_context.cp0_epc = 0;
-		pcb[i].kernel_context.pc = 0;
-
-		pcb[i].user_context.cp0_status = 0;
-		pcb[i].user_context.hi = 0;
-		pcb[i].user_context.lo = 0;
-		pcb[i].user_context.cp0_badvaddr = 0;
-		pcb[i].user_context.cp0_cause = 0;
-		pcb[i].user_context.cp0_epc = 0;
-		pcb[i].user_context.pc = sched1_tasks[i] -> entry_point;
-
-		pcb[i].user_stack_top = STACK_TOP - i * STACK_SIZE;
-
-		pcb[i].prev = NULL;
-		pcb[i].next = NULL;
+		pcb[i].user_context.regs[29] = STACK_TOP - 2 * i * STACK_SIZE;
+		pcb[i].user_stack_top = STACK_TOP - 2 * i * STACK_SIZE;
+		pcb[i].kernel_context.regs[29] = STACK_TOP - (2 * i + 1) * STACK_SIZE;
+		pcb[i].kernel_stack_top = STACK_TOP - (2 * i + 1) * STACK_SIZE;
 
 		pcb[i].pid = i;
 
-		pcb[i].type = sched1_tasks[i] -> type;
-
-		queue_push(&ready_queue, &pcb[i]);
 		pcb[i].status = TASK_READY;
 	}
-	pcb[num_sched1_tasks].pid = num_sched1_tasks;
-	current_running = &pcb[num_sched1_tasks];
+	pcb[0].type = KERNEL_THREAD;
+	pcb[0].status = TASK_RUNNING;
 }
 
 static void init_exception_handler()
@@ -124,14 +112,19 @@ void __attribute__((section(".entry_function"))) _start(void)
 	// init screen (QAQ)
 	init_screen();
 	printk("> [INIT] SCREEN initialization succeeded.\n");
-
+	// int temp;
+	// for(temp = 0; temp <= 3; temp++)
+	// {
+	// 	printk("i = %d, entry point = %x\n", temp, (int)pcb[temp].user_context.regs[31]);
+	// }
 	// TODO Enable interrupt
 
 	while (1)
 	{
+		//printk("qaq");
 		// (QAQQQQQQQQQQQ)
 		// If you do non-preemptive scheduling, you need to use it to surrender control
-		// do_scheduler();
+		do_scheduler();
 	};
 	return;
 }
