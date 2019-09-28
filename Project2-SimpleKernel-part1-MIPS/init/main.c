@@ -35,28 +35,37 @@
 #define STACK_TOP 0xa0f00000
 #define STACK_SIZE 0x100
 queue_t ready_queue;
-queue_t block_queue;
 queue_t sleep_queue;
 extern pcb_t *current_running;
 
 static void init_pcb()
 {
-	queue_init(&block_queue);
 	queue_init(&ready_queue);
 	queue_init(&sleep_queue);
 	current_running = &pcb[0];
 
 	int i, j;
-	for(i = 0; i < 1 + num_sched1_tasks; i++)
+	for(i = 0; i < 1 + num_lock_tasks + num_sched1_tasks; i++)
 	{
     	memset(&pcb[i], 0, sizeof(pcb_t));
 		if(i != 0)
 		{
-			pcb[i].user_context.regs[31] = sched1_tasks[i-1] -> entry_point;
-			pcb[i].user_context.pc = sched1_tasks[i-1] -> entry_point;
-			pcb[i].kernel_context.regs[31] = sched1_tasks[i-1] -> entry_point;
-			pcb[i].kernel_context.pc = sched1_tasks[i-1] -> entry_point;
-			pcb[i].type = sched1_tasks[i-1] -> type;
+			if(i <= num_sched1_tasks) //1,2,3
+			{
+				pcb[i].user_context.regs[31] = sched1_tasks[i-1] -> entry_point;
+				pcb[i].user_context.pc = sched1_tasks[i-1] -> entry_point;
+				pcb[i].kernel_context.regs[31] = sched1_tasks[i-1] -> entry_point;
+				pcb[i].kernel_context.pc = sched1_tasks[i-1] -> entry_point;
+				pcb[i].type = sched1_tasks[i-1] -> type;
+			}
+			else //4,5
+			{
+				pcb[i].user_context.regs[31] = lock_tasks[i-4] -> entry_point;
+				pcb[i].user_context.pc = lock_tasks[i-4] -> entry_point;
+				pcb[i].kernel_context.regs[31] = lock_tasks[i-4] -> entry_point;
+				pcb[i].kernel_context.pc = lock_tasks[i-4] -> entry_point;
+				pcb[i].type = lock_tasks[i-4] -> type;
+			}
 			queue_push(&ready_queue, &pcb[i]);
 		}
 		pcb[i].user_context.regs[29] = STACK_TOP - 2 * i * STACK_SIZE;

@@ -13,7 +13,7 @@ void printk_task1(void)
 {
     //printk("in task1\n");
     int i;
-    int print_location = 1;
+    int print_location = 3;
 
     for (i = 0;; i++)
     {
@@ -26,7 +26,7 @@ void printk_task1(void)
 void printk_task2(void)
 {
     int i;
-    int print_location = 2;
+    int print_location = 4;
 
     for (i = 0;; i++)
     {
