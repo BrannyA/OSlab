@@ -25,17 +25,7 @@ void scheduler(void)
     //printk("in scheduler\n");
     // TODO schedule
     // Modify the current_running pointer.
-    // if(current_running == NULL)
-    // {
-    // //    printk("in if\n");
-    //     current_running = queue_dequeue(&ready_queue);
-    //     current_running->status = TASK_RUNNING;
-    //     process_id = current_running->pid;
-    // }
-    //else
-    //{
-    //    printk("%d", sizeof(pcb_t));
-    //    printk("in else\n");
+        // printk("%d", sizeof(pcb_t));
         // printk("push: %x pid %d\n", (int)current_running, current_running->pid);
         // printk("%x\n", (int)current_running->user_context.regs[31]);
     if(current_running->status != TASK_BLOCKED)
