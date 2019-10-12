@@ -38,47 +38,45 @@ queue_t ready_queue;
 queue_t sleep_queue;
 extern pcb_t *current_running;
 
+static void init_task_pcb(struct task_info *task[], int num_task, int num_pcb)
+{
+	int i;
+	for(i = 0; i < num_task; i++)
+	{
+		pcb[num_pcb + i].user_context.regs[31] = task[i] -> entry_point;
+		pcb[num_pcb + i].user_context.pc = task[i] -> entry_point;
+		pcb[num_pcb + i].kernel_context.regs[31] = task[i] -> entry_point;
+		pcb[num_pcb + i].kernel_context.pc = task[i] -> entry_point;
+		pcb[num_pcb + i].type = task[i] -> type;
+
+		pcb[num_pcb + i].pid = num_pcb + i;
+		pcb[num_pcb + i].status = TASK_READY;
+		queue_push(&ready_queue, &pcb[num_pcb + i]);
+	}
+	//TODO
+}
+
 static void init_pcb()
 {
 	queue_init(&ready_queue);
 	queue_init(&sleep_queue);
 	current_running = &pcb[0];
 
-	int i, j;
-	for(i = 0; i < 1 + num_lock_tasks + num_sched1_tasks; i++)
+	int i;
+	for(i = 0; i < NUM_MAX_TASK; i++)
 	{
     	memset(&pcb[i], 0, sizeof(pcb_t));
-		if(i != 0)
-		{
-			if(i <= num_sched1_tasks) //1,2,3
-			{
-				pcb[i].user_context.regs[31] = sched1_tasks[i-1] -> entry_point;
-				pcb[i].user_context.pc = sched1_tasks[i-1] -> entry_point;
-				pcb[i].kernel_context.regs[31] = sched1_tasks[i-1] -> entry_point;
-				pcb[i].kernel_context.pc = sched1_tasks[i-1] -> entry_point;
-				pcb[i].type = sched1_tasks[i-1] -> type;
-			}
-			else //4,5
-			{
-				pcb[i].user_context.regs[31] = lock_tasks[i-4] -> entry_point;
-				pcb[i].user_context.pc = lock_tasks[i-4] -> entry_point;
-				pcb[i].kernel_context.regs[31] = lock_tasks[i-4] -> entry_point;
-				pcb[i].kernel_context.pc = lock_tasks[i-4] -> entry_point;
-				pcb[i].type = lock_tasks[i-4] -> type;
-			}
-			queue_push(&ready_queue, &pcb[i]);
-		}
 		pcb[i].user_context.regs[29] = STACK_TOP - 2 * i * STACK_SIZE;
 		pcb[i].user_stack_top = STACK_TOP - 2 * i * STACK_SIZE;
 		pcb[i].kernel_context.regs[29] = STACK_TOP - (2 * i + 1) * STACK_SIZE;
 		pcb[i].kernel_stack_top = STACK_TOP - (2 * i + 1) * STACK_SIZE;
-
-		pcb[i].pid = i;
-
-		pcb[i].status = TASK_READY;
 	}
 	pcb[0].type = KERNEL_THREAD;
 	pcb[0].status = TASK_RUNNING;
+
+	init_task_pcb(sched1_tasks, num_sched1_tasks, 1);
+	init_task_pcb(lock_tasks, num_lock_tasks, 1 + num_sched1_tasks);
+
 }
 
 static void init_exception_handler()

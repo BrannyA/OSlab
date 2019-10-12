@@ -3,10 +3,16 @@
 .equ    KERNEL, 0
 .equ    USER,   156
 
-.macro STI
+.macro STI #store interrupt
+    mfc0    k0, CP0_STATUS
+    ori     k0, k0, 0x1
+    mtc0    k0, CP0_STATUS
 .endm
 
-.macro CLI
+.macro CLI #cleer interrupt
+    mfc0    k0, CP0_STATUS
+    andi    k0, k0, -2
+    mtc0    k0, CP0_STATUS
 .endm
 
 LEAF(asm_start)
