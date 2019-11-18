@@ -281,6 +281,12 @@ void do_kill(pid_t pid)
         if(pcb[i].pid == pid )//&& pcb[i].status != TASK_EXITED)
             break;
     }
+    // if(i == NUM_MAX_TASK)
+    // {
+    //     printf("pcb does not exist");
+    //     do_scheduler();
+    //     return;
+    // }
     // vt100_move_cursor(1, 20);
     // printk("here pcb[%d].pid = %d\n", i, pcb[i].pid);
     // if(pid == current_running->pid || i == NUM_MAX_TASK)

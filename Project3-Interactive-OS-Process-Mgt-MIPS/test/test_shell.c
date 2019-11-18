@@ -101,14 +101,26 @@ void test_shell()
     {
         do{
             //read command from UART port
+        read:
             disable_interrupt();
             ch = read_uart_ch();
             enable_interrupt();
-            printf("%c", ch);
+            if(ch == 8 || ch == 127)
+            {
+                index --;
+                screen_cursor_x--;
+                buffer[index] = '\0';
+                goto read;
+            }
+            else
+            {
+                printf("%c", ch);
+            }
         } while(ch == 0);
 
         if(ch == 13)    // \n
         {
+            // printf("buffer: %s", buffer);
             buffer[index] = '\0';
             if(strcmp(buffer, "ps") == 0)
             {
@@ -142,18 +154,54 @@ void test_shell()
             //kill x\0
             else if(buffer[0] == 'k' && buffer[1] == 'i' && buffer[2] == 'l' && buffer[3] == 'l' && buffer[4] ==' ' && buffer[5] >= '0' && buffer[5] <= '9' && buffer[6] == '\0')
             {
-                sys_kill(buffer[5] - '0');
-                shell_location ++;
-                sys_move_cursor(1, shell_location);
-                printf("kill process pid = %c.", buffer[5]);
+                int i;
+                for(i = 0; i < NUM_MAX_TASK; i++)
+                {
+                    if(pcb[i].pid == buffer[5] - '0' )
+                        break;
+                }
+                if(i == NUM_MAX_TASK)
+                {
+                    shell_location ++;
+                    sys_move_cursor(1, shell_location);
+                    printf("pcb does not exist");
+                }
+                else if(buffer[5] - '0' == 1)
+                {
+                    shell_location ++;
+                    sys_move_cursor(1, shell_location);
+                    printf("cannot kill shell");
+                }
+                else
+                {
+                    sys_kill(buffer[5] - '0');
+                    shell_location ++;
+                    sys_move_cursor(1, shell_location);
+                    printf("kill process pid = %c.", buffer[5]);
+                }
             }
             //kill xx\0
             else if(buffer[0] == 'k' && buffer[1] == 'i' && buffer[2] == 'l' && buffer[3] == 'l' && buffer[4] ==' ' && buffer[5] >= '0' && buffer[5] <= '9' && buffer[6] >= '0' && buffer[6] <= '6' && buffer[7] == '\0' )
             {
-                sys_kill( 10 * (buffer[5] - '0') + buffer[6] - '0' );
-                shell_location ++;
-                sys_move_cursor(1, shell_location);
-                printf("kill process pid = %c%c.", buffer[5], buffer[6]);
+                int i;
+                for(i = 0; i < NUM_MAX_TASK; i++)
+                {
+                    if(pcb[i].pid == 10 * (buffer[5] - '0') + buffer[6] - '0' )
+                        break;
+                }
+                if(i == NUM_MAX_TASK)
+                {
+                    shell_location ++;
+                    sys_move_cursor(1, shell_location);
+                    printf("pcb does not exist");
+                }
+                else
+                {
+                    sys_kill( 10 * (buffer[5] - '0') + buffer[6] - '0' );
+                    shell_location ++;
+                    sys_move_cursor(1, shell_location);
+                    printf("kill process pid = %c%c.", buffer[5], buffer[6]);
+                }
             }
             else
             {
